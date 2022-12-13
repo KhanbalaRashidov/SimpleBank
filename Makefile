@@ -13,6 +13,7 @@ createdb:
 dropdb:
 	docker exec -it  postgres dropdb simple_bank
 
-
-
-.PHONY: network postgres createdb dropdb
+sqlc:
+	docker run --rm -v ${pwd}:/src -w /src kjconroy/sqlc generate \
+    
+.PHONY: network postgres createdb dropdb sqlc

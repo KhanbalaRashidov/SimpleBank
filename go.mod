@@ -1,3 +1,3 @@
-module github.com/golang-migrate/migrate/cmd/migrate
+module github.com/KhanbalaRashidov/SimpleBank
 
 go 1.19
