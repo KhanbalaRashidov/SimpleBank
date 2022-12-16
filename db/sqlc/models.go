@@ -19,7 +19,7 @@ type Account struct {
 type Entry struct {
 	ID        int64
 	AccountID int64
-	// can be negative and positive
+	// can be negative or positive
 	Amount    int64
 	CreatedAt time.Time
 }
