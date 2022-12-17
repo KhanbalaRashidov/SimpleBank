@@ -36,11 +36,9 @@ func (q *Queries) AddBalance(ctx context.Context, arg AddBalanceParams) (Account
 
 const createAccount = `-- name: CreateAccount :one
 INSERT INTO accounts (
-  owner,
-  balance,
-  currency
+    owner, balance, currency
 ) VALUES (
-  $1, $2, $3
+    $1, $2, $3
 ) RETURNING id, owner, balance, currency, created_at
 `
 
@@ -63,16 +61,6 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 	return i, err
 }
 
-const deleteAAccounts = `-- name: DeleteAAccounts :exec
-DELETE FROM accounts
-WHERE id = $1
-`
-
-func (q *Queries) DeleteAAccounts(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAAccounts, id)
-	return err
-}
-
 const deleteAccount = `-- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1
@@ -90,6 +78,25 @@ WHERE id = $1 LIMIT 1
 
 func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 	row := q.db.QueryRowContext(ctx, getAccount, id)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getAccountForUpdate = `-- name: GetAccountForUpdate :one
+SELECT id, owner, balance, currency, created_at FROM accounts
+WHERE id = $1 LIMIT 1
+FOR NO KEY UPDATE
+`
+
+func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, error) {
+	row := q.db.QueryRowContext(ctx, getAccountForUpdate, id)
 	var i Account
 	err := row.Scan(
 		&i.ID,

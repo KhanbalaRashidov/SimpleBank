@@ -8,7 +8,7 @@ import (
 )
 
 func TestTranferTx(t *testing.T) {
-	store := NewStore(conn)
+	store := NewStore(testDb)
 
 	testAccount1 := createRandomAccount(t)
 	testAccount2 := createRandomAccount(t)
@@ -25,6 +25,7 @@ func TestTranferTx(t *testing.T) {
 				ToAccountID:   testAccount2.ID,
 				Amount:        amount,
 			})
+
 			errs <- err
 			results <- result
 		}()
@@ -73,8 +74,8 @@ func TestTranferTx(t *testing.T) {
 		require.Equal(t, testAccount1.ID, fromAccount.ID)
 
 		toAccount := result.ToAccount
-		require.Empty(t, toAccount)
-		require.NotEqual(t, testAccount2.ID, toAccount.ID)
+		require.NotEmpty(t, toAccount)
+		require.Equal(t, testAccount2.ID, toAccount.ID)
 
 	}
 
