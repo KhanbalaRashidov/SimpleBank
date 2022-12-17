@@ -9,6 +9,31 @@ import (
 	"context"
 )
 
+const addBalance = `-- name: AddBalance :one
+UPDATE accounts
+SET balance = balance + $1
+WHERE id = $2
+RETURNING id, owner, balance, currency, created_at
+`
+
+type AddBalanceParams struct {
+	Amount int64
+	ID     int64
+}
+
+func (q *Queries) AddBalance(ctx context.Context, arg AddBalanceParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, addBalance, arg.Amount, arg.ID)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createAccount = `-- name: CreateAccount :one
 INSERT INTO accounts (
   owner,
@@ -45,6 +70,16 @@ WHERE id = $1
 
 func (q *Queries) DeleteAAccounts(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteAAccounts, id)
+	return err
+}
+
+const deleteAccount = `-- name: DeleteAccount :exec
+DELETE FROM accounts
+WHERE id = $1
+`
+
+func (q *Queries) DeleteAccount(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteAccount, id)
 	return err
 }
 
@@ -107,20 +142,20 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]A
 	return items, nil
 }
 
-const updateAccounts = `-- name: UpdateAccounts :exec
+const updateAccount = `-- name: UpdateAccount :one
 UPDATE accounts
-SET  balance = $2
+SET balance = $2
 WHERE id = $1
 RETURNING id, owner, balance, currency, created_at
 `
 
-type UpdateAccountsParams struct {
+type UpdateAccountParams struct {
 	ID      int64
 	Balance int64
 }
 
-func (q *Queries) UpdateAccounts(ctx context.Context, arg UpdateAccountsParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, updateAccounts, arg.ID, arg.Balance)
+func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, updateAccount, arg.ID, arg.Balance)
 	var i Account
 	err := row.Scan(
 		&i.ID,
