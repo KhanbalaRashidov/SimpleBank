@@ -31,6 +31,8 @@ func TestTranferTx(t *testing.T) {
 		}()
 	}
 
+	//check result
+
 	for i := 0; i < 5; i++ {
 		err := <-errs
 		require.NoError(t, err)
@@ -38,6 +40,7 @@ func TestTranferTx(t *testing.T) {
 		result := <-results
 		require.NotEmpty(t, result)
 
+		//check transfer
 		transfer := result.Transfer
 		require.NotEmpty(t, transfer)
 		require.Equal(t, testAccount1.ID, transfer.FromAccountID)
@@ -49,6 +52,7 @@ func TestTranferTx(t *testing.T) {
 		_, err = store.GetTransfer(context.Background(), transfer.ID)
 		require.NoError(t, err)
 
+		//check entry
 		fromEntry := result.FromEntry
 		require.NotEmpty(t, fromEntry)
 		require.Equal(t, testAccount1.ID, fromEntry.AccountID)
@@ -69,6 +73,7 @@ func TestTranferTx(t *testing.T) {
 		_, err = store.GetEntry(context.Background(), toEntry.ID)
 		require.NoError(t, err)
 
+		//check account
 		fromAccount := result.FromAccount
 		require.NotEmpty(t, fromAccount)
 		require.Equal(t, testAccount1.ID, fromAccount.ID)
@@ -76,6 +81,16 @@ func TestTranferTx(t *testing.T) {
 		toAccount := result.ToAccount
 		require.NotEmpty(t, toAccount)
 		require.Equal(t, testAccount2.ID, toAccount.ID)
+
+		//check balance
+		diff1 := testAccount1.Balance - fromAccount.Balance
+		diff2 := toAccount.Balance - testAccount2.Balance
+		require.Equal(t, diff1, diff2)
+		require.True(t, diff1 > 0)
+		require.True(t, diff1%amount == 0)
+
+		k := int(diff1 / amount)
+		require.True(t, k >= 1 && k <= 5)
 
 	}
 
