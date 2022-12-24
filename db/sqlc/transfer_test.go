@@ -2,99 +2,78 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
-	"github.com/KhanbalaRashidov/SimpleBank/util"
 	"github.com/stretchr/testify/require"
+	"github.com/techschool/simplebank/util"
 )
 
-func createRandomTransfer(t *testing.T) Transfer {
-	acc1 := createRandomAccount(t)
-	acc2 := createRandomAccount(t)
-
+func createRandomTransfer(t *testing.T, account1, account2 Account) Transfer {
 	arg := CreateTransferParams{
-		FromAccountID: acc1.ID,
-		ToAccountID:   acc2.ID,
+		FromAccountID: account1.ID,
+		ToAccountID:   account2.ID,
 		Amount:        util.RandomMoney(),
 	}
 
-	entry, err := testQueries.CreateTransfer(context.Background(), arg)
+	transfer, err := testQueries.CreateTransfer(context.Background(), arg)
 	require.NoError(t, err)
-	require.NotEmpty(t, entry)
+	require.NotEmpty(t, transfer)
 
-	require.Equal(t, arg.FromAccountID, entry.FromAccountID)
-	require.Equal(t, arg.ToAccountID, entry.ToAccountID)
-	require.Equal(t, arg.Amount, entry.Amount)
+	require.Equal(t, arg.FromAccountID, transfer.FromAccountID)
+	require.Equal(t, arg.ToAccountID, transfer.ToAccountID)
+	require.Equal(t, arg.Amount, transfer.Amount)
 
-	require.NotZero(t, entry.ID)
-	require.NotZero(t, entry.CreatedAt)
+	require.NotZero(t, transfer.ID)
+	require.NotZero(t, transfer.CreatedAt)
 
-	return entry
+	return transfer
 }
 
 func TestCreateTransfer(t *testing.T) {
-	createRandomTransfer(t)
+	account1 := createRandomAccount(t)
+	account2 := createRandomAccount(t)
+	createRandomTransfer(t, account1, account2)
 }
 
 func TestGetTransfer(t *testing.T) {
-	entryCreated := createRandomTransfer(t)
-	entryQueried, err := testQueries.GetTransfer(context.Background(), entryCreated.ID)
+	account1 := createRandomAccount(t)
+	account2 := createRandomAccount(t)
+	transfer1 := createRandomTransfer(t, account1, account2)
 
+	transfer2, err := testQueries.GetTransfer(context.Background(), transfer1.ID)
 	require.NoError(t, err)
-	require.NotEmpty(t, entryQueried)
+	require.NotEmpty(t, transfer2)
 
-	require.Equal(t, entryCreated.ID, entryQueried.ID)
-	require.Equal(t, entryCreated.FromAccountID, entryQueried.FromAccountID)
-	require.Equal(t, entryCreated.ToAccountID, entryQueried.ToAccountID)
-	require.Equal(t, entryCreated.Amount, entryQueried.Amount)
-	require.WithinDuration(t, entryCreated.CreatedAt, entryQueried.CreatedAt, time.Second)
+	require.Equal(t, transfer1.ID, transfer2.ID)
+	require.Equal(t, transfer1.FromAccountID, transfer2.FromAccountID)
+	require.Equal(t, transfer1.ToAccountID, transfer2.ToAccountID)
+	require.Equal(t, transfer1.Amount, transfer2.Amount)
+	require.WithinDuration(t, transfer1.CreatedAt, transfer2.CreatedAt, time.Second)
 }
 
-func TestUpdateTransfer(t *testing.T) {
-	entry1 := createRandomTransfer(t)
+func TestListTransfer(t *testing.T) {
+	account1 := createRandomAccount(t)
+	account2 := createRandomAccount(t)
 
-	arg := UpdateTransferParams{
-		ID:     entry1.ID,
-		Amount: util.RandomMoney(),
-	}
-
-	entry2, err := testQueries.UpdateTransfer(context.Background(), arg)
-
-	require.NoError(t, err)
-	require.NotEmpty(t, entry2)
-}
-
-func TestDeleteTransfer(t *testing.T) {
-	entry1 := createRandomTransfer(t)
-
-	err := testQueries.DeleteTransfer(context.Background(), entry1.ID)
-
-	require.NoError(t, err)
-
-	entry2, err := testQueries.GetTransfer(context.Background(), entry1.ID)
-
-	require.Error(t, err)
-	require.EqualError(t, err, sql.ErrNoRows.Error())
-	require.Empty(t, entry2)
-}
-
-func TestListTransfers(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		createRandomTransfer(t)
+	for i := 0; i < 5; i++ {
+		createRandomTransfer(t, account1, account2)
+		createRandomTransfer(t, account2, account1)
 	}
 
 	arg := ListTransfersParams{
-		Limit:  5,
-		Offset: 5,
+		FromAccountID: account1.ID,
+		ToAccountID:   account1.ID,
+		Limit:         5,
+		Offset:        5,
 	}
 
-	entries, err := testQueries.ListTransfers(context.Background(), arg)
+	transfers, err := testQueries.ListTransfers(context.Background(), arg)
 	require.NoError(t, err)
-	require.Len(t, entries, 5)
+	require.Len(t, transfers, 5)
 
-	for _, entry := range entries {
-		require.NotEmpty(t, entry)
+	for _, transfer := range transfers {
+		require.NotEmpty(t, transfer)
+		require.True(t, transfer.FromAccountID == account1.ID || transfer.ToAccountID == account1.ID)
 	}
 }
