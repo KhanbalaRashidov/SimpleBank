@@ -3,9 +3,9 @@ package worker
 import (
 	"context"
 
+	db "github.com/KhanbalaRashidov/SimpleBank/db/sqlc"
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog/log"
-	db "github.com/techschool/simplebank/db/sqlc"
 )
 
 const (
